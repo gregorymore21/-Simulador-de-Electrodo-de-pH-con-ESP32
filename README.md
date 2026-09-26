@@ -15,7 +15,7 @@ En esta práctica se evaluó el acondicionamiento de señales provenientes de fu
 
 El flujo de señal comprende tres etapas consecutivas:
 1. **Etapa 1:** Generación directa de la señal simulada por el DAC del ESP32.
-2. **Etapa 2:** Evidencia del efecto de carga con $R_1 = 1\text{ M}\Omega$ intercalada (Nodo A).
+2. **Etapa 2:** Evidencia del efecto de carga con R1 = 1MΩ intercalada (Nodo A).
 3. **Etapa 3:** Corrección mediante el buffer de alta impedancia (Nodo B).
 
 ![Montaje del Buffer en Protoboard](fig10_montaje_buffer_tl084.jpg)
@@ -37,7 +37,7 @@ Para acondicionar la señal proveniente de la alta impedancia de la fuente sin d
 *Figura 3. Medición en osciloscopio y multímetro de la señal generada para pH 4 sin resistencia intercalada (Etapa 1).*
 
 ![Efecto de Carga Etapa 2](fig17_medicion_etapa2_ph4.jpg)
-*Figura 4. Atenuación del voltaje por efecto de carga al medir en el Nodo A tras $R_1 = 1\text{ M}\Omega$ sin buffer (Etapa 2).*
+*Figura 4. Atenuación del voltaje por efecto de carga al medir en el Nodo A tras R1 = 1MΩ sin buffer (Etapa 2).*
 
 ![Corrección Buffer Etapa 3](fig23_medicion_etapa3_tl084_ph4.jpg)
 *Figura 5. Recuperación de la amplitud de la señal medida en el Nodo B a la salida del buffer TL084 (Etapa 3).*
@@ -61,8 +61,8 @@ Para acondicionar la señal proveniente de la alta impedancia de la fuente sin d
 * **Placa de desarrollo:** ESP32 (Generador de señal de pH en GPIO25)
 * **Circuito Integrado 1:** TL084N (Op-amp cuádruple con entrada JFET)
 * **Circuito Integrado 2:** LM324N (Op-amp cuádruple con entrada Bipolar)
-* **Componentes Pasivos:** Resistencia de $1\text{ M}\Omega$ ($\pm 5\%$), Capacitores cerámicos de $0.1\ \mu\text{F}$ (Desacoplo)
-* **Alimentación:** Fuente de laboratorio dual $\pm 9\text{ V}$
+* **Componentes Pasivos:** Resistencia de 1MΩ, Capacitores cerámicos de 0.1 uF (Desacoplo)
+* **Alimentación:** Fuente de laboratorio dual 9V
 * **Equipos de Medición:** Osciloscopio digital de banco y Multímetro digital
 
 ---
