@@ -1,84 +1,78 @@
-# Simulador de Electrodo de pH con ESP32
+# Acondicionamiento de Señales de Alta Impedancia (Simulador de Electrodo de pH)
 
-**Repositorio del Laboratorio N.º 1 — Acondicionamiento de señales de alta impedancia**  
-*Curso: Instrumentación Biomédica III — Escuela Profesional de Ingeniería Biomédica, UNMSM*
-
----
-
-## Descripción
-
-Este proyecto simula el comportamiento eléctrico de un electrodo de pH real utilizando un microcontrolador ESP32. El sistema recibe un valor de pH (0–14) por el Monitor Serial, calcula el potencial teórico según la ecuación de Nernst a 25 °C, y lo entrega como una señal analógica real a través del DAC del pin **GPIO25**.
-
-Esta señal simulada se usó como fuente de alta impedancia para estudiar experimentalmente el efecto de carga (*loading error*) y su corrección mediante un buffer de ganancia unitaria (seguidor de voltaje), implementado con dos amplificadores operacionales distintos: el **TL084** (entrada JFET) y el **LM324** (entrada bipolar).
+**Informe de Laboratorio N.º 1 — Instrumentación Biomédica III**  
+*Escuela Profesional de Ingeniería Biomédica — Universidad Nacional Mayor de San Marcos (UNMSM)*
 
 ---
 
-## ¿Cómo funciona el código?
+## 1. Resumen
 
-1. El usuario ingresa un valor de pH (entre 0 y 14) por el Monitor Serial.
-2. El ESP32 calcula el potencial de Nernst:
-   $$\text{E} = -0.05916 \times (\text{pH} - 7)$$
-3. La señal se escala (factor 5.0) y se le aplica un offset de 1.65 V para mantenerla dentro del rango seguro del DAC (0 V – 3.3 V).
-4. El valor resultante se convierte a un valor digital de 8 bits y se envía al DAC en **GPIO25** mediante `dacWrite()`.
-5. El Monitor Serial muestra el pH ingresado, el voltaje de Nernst, el voltaje final entregado y el valor digital correspondiente.
+En esta práctica se evaluó el acondicionamiento de señales provenientes de fuentes de muy alta impedancia, simulando la respuesta de un electrodo de pH mediante el periférico DAC (GPIO25) de un ESP32. Al intercalar una resistencia $R_1 = 1\text{ M}\Omega$ para modelar la impedancia del sensor, se observó un **error de carga (loading error) de entre 50% y 54%** al medir directamente con instrumental convencional (multímetro y osciloscopio). La implementación de una etapa de desacoplamiento tipo buffer (seguidor de voltaje) logró corregir eficazmente esta pérdida: el circuito con op-amp de entrada JFET (**TL084**) redujo el error a **< 4%**, mientras que el de entrada bipolar (**LM324**) lo redujo a **< 7%**, validando la teoría del divisor de tensión y la importancia de la alta impedancia de entrada en instrumentación clínica.
 
 ---
 
-## Archivo principal
+## 2. Diagramas del Sistema y Montaje
 
-| Archivo | Descripción |
-| :--- | :--- |
-| `simulador_ph.ino` | Sketch de Arduino/ESP32 que genera la señal simulada de pH descrita arriba. |
+El flujo de señal comprende tres etapas consecutivas:
+1. **Etapa 1:** Generación directa de la señal simulada por el DAC del ESP32.
+2. **Etapa 2:** Evidencia del efecto de carga con $R_1 = 1\text{ M}\Omega$ intercalada (Nodo A).
+3. **Etapa 3:** Corrección mediante el buffer de alta impedancia (Nodo B).
 
----
-
-## Montaje experimental
-
-El laboratorio se desarrolló en tres etapas:
-* **Etapa 1:** Verificación directa del voltaje generado por el DAC (GPIO25 → osciloscopio/multímetro).
-* **Etapa 2:** Se intercaló una resistencia $R_1 = 1\text{ M}\Omega$ entre el ESP32 y el instrumento de medición (Nodo A), simulando la alta impedancia de un electrodo real y evidenciando el efecto de carga.
-* **Etapa 3:** Se conectó el Nodo A a la entrada no inversora de un buffer seguidor de voltaje (TL084 y, por separado, LM324), midiendo la señal corregida en el Nodo B.
+![Montaje del Buffer en Protoboard](fig10_montaje_buffer_tl084.jpg)
+*Figura 1. Circuito buffer implementado en protoboard con el CI TL084, alimentado con fuente dual de ±9 V.*
 
 ---
 
-## Resultados obtenidos
+## 3. Desarrollo Experimental y Medición
 
-### Resumen Consolidado de Datos de Laboratorio
+### Configuración del Operacional TL084
+Para acondicionar la señal proveniente de la alta impedancia de la fuente sin drenar corriente, se utilizó la configuración seguidor de tensión con entrada JFET.
 
-| Etapa | pH simulado | V teórico (V) | V osciloscopio (V) | V multímetro (V) | Buffer TL084 (V) | Buffer LM324 (V) |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1** | 4 | 2.5374 | 2.436 | — | — | — |
-| **1** | 7 | 1.6500 | 1.583 | — | — | — |
-| **1** | 10 | 0.7626 | 0.772 | — | — | — |
-| **2** | 4 | 2.5374 | 1.160 | 1.165 | — | — |
-| **2** | 7 | 1.6500 | 0.800 | 0.758 | — | — |
-| **2** | 10 | 0.7626 | 0.360 | 0.364 | — | — |
-| **3** | 4 | 2.5374 | — | — | 2.469 | 2.475 |
-| **3** | 7 | 1.6500 | — | — | 1.602 | 1.623 |
-| **3** | 10 | 0.7626 | — | — | 0.793 | 0.813 |
+![Pinout TL084](fig20_pinout_tl084.png)
+*Figura 2. Diagrama de pines del CI TL084 (Op-Amp de entrada JFET).*
 
-> **Nota:** Sin buffer, el error de carga respecto al valor teórico alcanzó entre **51% y 54%**. Con el buffer TL084 el error se redujo a un rango de **2.69% a 3.99%**, y con el LM324 a un rango de **1.64% a 6.61%**, confirmando la efectividad de un buffer de alta impedancia de entrada para mitigar el efecto de carga sobre fuentes de alta impedancia.
+### Comparativa de Mediciones por Etapas
 
----
+![Verificación Etapa 1](fig13_medicion_etapa1_ph4.jpg)
+*Figura 3. Medición en osciloscopio y multímetro de la señal generada para pH 4 sin resistencia intercalada (Etapa 1).*
 
-## Componentes utilizados
+![Efecto de Carga Etapa 2](fig17_medicion_etapa2_ph4.jpg)
+*Figura 4. Atenuación del voltaje por efecto de carga al medir en el Nodo A tras $R_1 = 1\text{ M}\Omega$ sin buffer (Etapa 2).*
 
-* ESP32 (placa de desarrollo)
-* CI TL084N (op-amp cuádruple, entrada JFET)
-* CI LM324N (op-amp cuádruple, entrada bipolar)
-* Resistencia $1\text{ M}\Omega$
-* Capacitores cerámicos $0.1\ \mu\text{F}$ (desacoplo de alimentación)
-* Fuente de alimentación dual $\pm 9\text{ V}$
-* Osciloscopio y multímetro digital
+![Corrección Buffer Etapa 3](fig23_medicion_etapa3_tl084_ph4.jpg)
+*Figura 5. Recuperación de la amplitud de la señal medida en el Nodo B a la salida del buffer TL084 (Etapa 3).*
 
 ---
 
-## Integrantes
+## 4. Resultados y Análisis de Carga
 
-* Dávila Pucuhuayla, Jazmín Sarai
-* Leon Vasquez, Jimmy Fabricio
-* More Quispe, Gregory Martin
-* Maldonado Villacorta, Paola Margot
+### Tabla 1. Comparativa Global de Voltajes y Errores Porcentuales
+
+| pH Simulado | V Teórico (V) | V Medido Etapa 1 (V) | V Medido Nodo A (Sin Buffer) | Error de Carga (%) | V Medido Buffer TL084 (V) | Error TL084 (%) | V Medido Buffer LM324 (V) | Error LM324 (%) |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **pH 4** | 2.5374 | 2.436 | 1.165 | **54.09%** | 2.469 | **2.69%** | 2.475 | **2.46%** |
+| **pH 7** | 1.6500 | 1.583 | 0.758 | **54.06%** | 1.602 | **2.91%** | 1.623 | **1.64%** |
+| **pH 10** | 0.7626 | 0.772 | 0.364 | **52.27%** | 0.793 | **3.99%** | 0.813 | **6.61%** |
+
+---
+
+## 5. Materiales e Instrumental Utilizados
+
+* **Placa de desarrollo:** ESP32 (Generador de señal de pH en GPIO25)
+* **Circuito Integrado 1:** TL084N (Op-amp cuádruple con entrada JFET)
+* **Circuito Integrado 2:** LM324N (Op-amp cuádruple con entrada Bipolar)
+* **Componentes Pasivos:** Resistencia de $1\text{ M}\Omega$ ($\pm 5\%$), Capacitores cerámicos de $0.1\ \mu\text{F}$ (Desacoplo)
+* **Alimentación:** Fuente de laboratorio dual $\pm 9\text{ V}$
+* **Equipos de Medición:** Osciloscopio digital de banco y Multímetro digital
+
+---
+
+## 6. Integrantes
+
+* **Dávila Pucuhuayla, Jazmín Sarai** — *Código: 23190369*
+* **Leon Vasquez, Jimmy Fabricio** — *Código: 23190378*
+* **More Quispe, Gregory Martin** — *Código: 23190125*
+* **Maldonado Villacorta, Paola Margot** — *Código: 23190124*
 
 **Docente:** María Elisia Armas Alvarado  
-**Curso:** Instrumentación Biomédica III — Escuela Profesional de Ingeniería Biomédica, UNMSM
+**Curso:** Instrumentación Biomédica III — Universidad Nacional Mayor de San Marcos
